@@ -1,7 +1,10 @@
 #ifndef SINGLE_LINKED_LIST_H
 #define SINGLE_LINKED_LIST_H
 
+#include <iostream>
 #include <cassert>
+#include <functional>
+
 #include "linked_list.hpp"
 
 namespace list {
@@ -11,64 +14,84 @@ namespace list {
   public:
     // Get the size of the
     // linked list.
-    int size() override;
+    int size() const override;
 
     // Add element to the beginning
     // of the list.
-    void Add(const T e) override;
+    void add(const T e) override;
 
     // Add element to the given index
     // of the list, the element's index
     // will be the given index.
-    void Add(const T e, const int index) override;
+    void add(const T e, const int index) override;
 
     // Remove element at the given index
     // from the list.
-    void Remove(const int index) override;
+    void remove(const int index) override;
 
     // Test wither the given list
     // is empty or not.
-    bool empty() override;
+    bool empty() const override;
+
+    // Apply a transformation function over
+    // the elements of this list.
+    template<typename U>
+    void map(const std::function<U (T)> mapper);
+
+    // Apply a predicate over the elements
+    // of this list, only keep elements
+    // satisfy the predicate.
+    void filter(const std::function<bool (T)> predicate);
+
+    // Get the element of the list
+    // at the given index.
+    T operator[](int index) const;
+
+    template<typename A>
+    friend std::ostream& operator<<(std::ostream&, const SingleLinkedList<A>&);
+
   private:
     struct Node {
       T data;
       Node* next;
+      Node(T data, Node* next = nullptr) :
+        data(data), next(next) {}
     };
-    void RemoveHead();
+    void removeHead();
     Node* head_ = nullptr;
     int size_ = 0;
   };
 
   template<typename T>
-  int SingleLinkedList<T>::size() {
+  int SingleLinkedList<T>::size() const {
     return this->size_;
   }
 
   template<typename T>
-  void SingleLinkedList<T>::Add(const T e) {
-    Node node = { e, head_ };
-    head_ = &node;
+  void SingleLinkedList<T>::add(const T e) {
+    Node* node = new Node(e, head_);
+    head_ = node;
     ++size_;
   }
 
   template<typename T>
-  void SingleLinkedList<T>::Add(const T e, const int index) {
+  void SingleLinkedList<T>::add(const T e, const int index) {
     assert(index >= 0 && index <= size_);
-    Node node = { e, nullptr };
+    Node* node = new Node(e);
     Node* current = head_;
     for (int i = 0; i < index; ++i) {
       current = current->next;
     }
-    node.next = current->next;
-    current->next = &node;
+    node->next = current->next;
+    current->next = node;
     ++size_;
   }
 
   template<typename T>
-  void SingleLinkedList<T>::Remove(const int index) {
+  void SingleLinkedList<T>::remove(const int index) {
     assert(index >= 0 && index < size_);
     if (index == 0) {
-      this->RemoveHead();
+      this->removeHead();
       return;
     }
     Node* current = head_;
@@ -80,15 +103,56 @@ namespace list {
   }
 
   template<typename T>
-  void SingleLinkedList<T>::RemoveHead() {
+  void SingleLinkedList<T>::removeHead() {
     if (head_ == nullptr) return;
     head_ = head_->next;
     --size_;
   }
 
   template<typename T>
-  bool SingleLinkedList<T>::empty() {
+  bool SingleLinkedList<T>::empty() const {
     return size_ == 0;
+  }
+
+  template<typename T>
+  template<typename U>
+  void SingleLinkedList<T>::map(const std::function<U (T)> mapper) {
+    for (Node* current = head_; current != nullptr; current = current->next) {
+      current->data = f(current->data);
+    }
+  }
+
+  template<typename T>
+  void SingleLinkedList<T>::filter(const std::function<bool (T)> predicate) {
+    SingleLinkedList<T>* newList = new SingleLinkedList<T>();
+    for (Node* current = head_; current != nullptr; current = current->next) {
+      if (predicate(current->data)) {
+        newList->add(current->data);
+      }
+    }
+    this->head_ = newList->head_;
+    this->size_ = newList->size_;
+  }
+
+  template<typename T>
+  T SingleLinkedList<T>::operator[](int index) const {
+    assert(index >= 0 && index < size_);
+    Node* current = head_;
+    for (int i = 0; i < index; ++i) {
+      current = current->next;
+    }
+    return current->data;
+  }
+
+  template<typename T>
+  inline std::ostream& operator<<(std::ostream& out, const SingleLinkedList<T>& list) {
+    out << "[";
+    for (int i = 0; i < list.size(); ++i) {
+      if (i > 0) out << ",";
+      out << list[i];
+    }
+    out << "]";
+    return out;
   }
 
 }
