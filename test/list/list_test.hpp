@@ -1,4 +1,8 @@
 #include "gtest/gtest.h"
+#include "single_linked_list.hpp"
+
+using namespace list;
+
 class ListTest : public ::testing::Test {
 
 protected:
@@ -19,5 +23,7 @@ protected:
   // Code here will be called immediately after each test (right
   // before the destructor).
   virtual void TearDown();
+
+  SingleLinkedList<int>* list;
 
 };
